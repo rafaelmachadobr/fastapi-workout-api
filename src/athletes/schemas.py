@@ -37,3 +37,12 @@ class AthleteOut(AthleteIn, OutMixin):
 class AthleteUpdate(BaseSchema):
     name: Annotated[str, Field(
         description="The name of the athlete", example="John Doe", max_length=50)]
+
+
+class AthleteResponse(BaseSchema):
+    name: Annotated[str, Field(
+        description="The name of the athlete", example="John Doe", max_length=50)]
+    category: Annotated[CategoryIn, Field(
+        description="The category of the athlete")]
+    training_center: Annotated[TrainingCenterAthlete, Field(
+        description="The training center of the athlete")]

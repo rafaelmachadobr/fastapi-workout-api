@@ -5,7 +5,7 @@ from pydantic import UUID4
 from sqlalchemy.future import select
 
 from src.athletes.models import AthleteModel
-from src.athletes.schemas import AthleteIn, AthleteOut, AthleteUpdate
+from src.athletes.schemas import AthleteIn, AthleteOut, AthleteResponse, AthleteUpdate
 from src.categories.models import CategoryModel
 from src.contrib.dependencies import DatabaseDependency
 from src.training_centers.models import TrainingCenterModel
@@ -71,13 +71,13 @@ async def post(
     "/",
     summary="List all athletes",
     status_code=status.HTTP_200_OK,
-    response_model=list[AthleteOut]
+    response_model=list[AthleteResponse]
 )
 async def get(
     db_session: DatabaseDependency,
     name: str = Query(None, description="Filter by athlete's name"),
     cpf: str = Query(None, description="Filter by athlete's CPF")
-) -> list[AthleteOut]:
+) -> list[AthleteResponse]:
     query = select(AthleteModel)
 
     if name:
@@ -87,7 +87,7 @@ async def get(
         query = query.where(AthleteModel.cpf == cpf)
 
     athletes = (await db_session.execute(query)).scalars().all()
-    return [AthleteOut.model_validate(athlete) for athlete in athletes]
+    return [AthleteResponse.model_validate(athlete) for athlete in athletes]
 
 
 @router.get(
