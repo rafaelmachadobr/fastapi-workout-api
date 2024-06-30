@@ -1,6 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
-from fastapi import APIRouter, Body, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Body, HTTPException, Query, status
+from fastapi_pagination import Page, Params, paginate
 from pydantic import UUID4
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
@@ -76,13 +77,16 @@ async def post(
     "/",
     summary="List all athletes",
     status_code=status.HTTP_200_OK,
-    response_model=list[AthleteResponse]
+    response_model=Page[AthleteResponse]
 )
 async def get(
     db_session: DatabaseDependency,
     name: str = Query(None, description="Filter by athlete's name"),
-    cpf: str = Query(None, description="Filter by athlete's CPF")
-) -> list[AthleteResponse]:
+    cpf: str = Query(None, description="Filter by athlete's CPF"),
+    limit: int = Query(None, description="Limit the number of results"),
+    offset: int = Query(0, description="Offset the results"),
+    params: Params = Depends()
+) -> Page[AthleteResponse]:
     query = select(AthleteModel)
 
     if name:
@@ -91,8 +95,14 @@ async def get(
     if cpf:
         query = query.where(AthleteModel.cpf == cpf)
 
+    if limit:
+        query = query.limit(limit)
+
+    query = query.offset(offset)
+
     athletes = (await db_session.execute(query)).scalars().all()
-    return [AthleteResponse.model_validate(athlete) for athlete in athletes]
+
+    return paginate(athletes, params)
 
 
 @router.get(

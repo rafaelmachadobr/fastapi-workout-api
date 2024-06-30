@@ -1,5 +1,6 @@
 from uuid import uuid4
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi_pagination import Page, paginate, Params
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 from pydantic import UUID4
@@ -44,14 +45,28 @@ async def post(
 @router.get(
     "/",
     summary="List all categories",
-    response_model=list[CategoryOut]
+    response_model=Page[CategoryOut]
 )
 async def get(
-    db_session: DatabaseDependency
-) -> list[CategoryOut]:
-    result = await db_session.execute(select(CategoryModel))
-    categories = result.scalars().all()
-    return categories
+    db_session: DatabaseDependency,
+    name: str = Query(None, description="Filter by category name"),
+    limit: int = Query(None, description="Limit the number of results"),
+    offset: int = Query(0, description="Offset the results"),
+    params: Params = Depends()
+) -> Page[CategoryOut]:
+    query = select(CategoryModel)
+
+    if name:
+        query = query.filter(CategoryModel.name.ilike(f"%{name}%"))
+
+    if limit:
+        query = query.limit(limit)
+
+    query = query.offset(offset)
+
+    categories = (await db_session.execute(query)).scalars().all()
+
+    return paginate(categories, params)
 
 
 @router.get(

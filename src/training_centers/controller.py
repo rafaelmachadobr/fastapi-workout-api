@@ -1,5 +1,6 @@
 from uuid import uuid4
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, Depends, Body, HTTPException, Query, status
+from fastapi_pagination import Page, Params, paginate
 from pydantic import UUID4
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
@@ -46,19 +47,35 @@ async def post(
 @router.get(
     "/",
     summary="List all training centers",
-    response_model=list[TrainingCenterOut]
+    status_code=status.HTTP_200_OK,
+    response_model=Page[TrainingCenterOut]
 )
 async def get(
-    db_session: DatabaseDependency
-) -> list[TrainingCenterOut]:
-    result = await db_session.execute(select(TrainingCenterModel))
-    training_centers = result.scalars().all()
-    return training_centers
+    db_session: DatabaseDependency,
+    name: str = Query(None, description="Filter by training center name"),
+    limit: int = Query(None, description="Limit the number of results"),
+    offset: int = Query(0, description="Offset the results"),
+    params: Params = Depends()
+) -> Page[TrainingCenterOut]:
+    query = select(TrainingCenterModel)
+
+    if name:
+        query = query.where(TrainingCenterModel.name.ilike(f"%{name}%"))
+
+    if limit:
+        query = query.limit(limit)
+
+    query = query.offset(offset)
+
+    training_centers = (await db_session.execute(query)).scalars().all()
+
+    return paginate(training_centers, params)
 
 
 @router.get(
     "/{training_center_id}",
     summary="Get a training center by id",
+    status_code=status.HTTP_200_OK,
     response_model=TrainingCenterOut
 )
 async def get_by_id(
