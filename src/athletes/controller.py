@@ -78,7 +78,15 @@ async def get(
     name: str = Query(None, description="Filter by athlete's name"),
     cpf: str = Query(None, description="Filter by athlete's CPF")
 ) -> list[AthleteOut]:
-    athletes = (await db_session.execute(select(AthleteModel))).scalars().all()
+    query = select(AthleteModel)
+
+    if name:
+        query = query.where(AthleteModel.name.ilike(f"%{name}%"))
+
+    if cpf:
+        query = query.where(AthleteModel.cpf == cpf)
+
+    athletes = (await db_session.execute(query)).scalars().all()
     return [AthleteOut.model_validate(athlete) for athlete in athletes]
 
 
