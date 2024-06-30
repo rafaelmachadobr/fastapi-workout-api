@@ -2,6 +2,7 @@ from datetime import datetime
 from uuid import uuid4
 from fastapi import APIRouter, Body, HTTPException, Query, status
 from pydantic import UUID4
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 
 from src.athletes.models import AthleteModel
@@ -57,8 +58,12 @@ async def post(
 
         db_session.add(athlete_model)
         await db_session.commit()
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            detail="An athlete with the same CPF already exists"
+        )
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while creating the athlete"

@@ -1,6 +1,7 @@
 from uuid import uuid4
 from fastapi import APIRouter, Body, HTTPException, status
 from pydantic import UUID4
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 
 from src.contrib.dependencies import DatabaseDependency
@@ -25,8 +26,19 @@ async def post(
     training_center_model = TrainingCenterModel(
         **training_center_out.model_dump())
 
-    db_session.add(training_center_model)
-    await db_session.commit()
+    try:
+        db_session.add(training_center_model)
+        await db_session.commit()
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            detail=f"Training center with name {training_center_in.name} already exists"
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
 
     return training_center_out
 
