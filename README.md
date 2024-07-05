@@ -52,7 +52,6 @@ O FastAPI Workout API é uma aplicação de gerenciamento de treinos desenvolvid
 
 ## Tecnologias Utilizadas
 
-<h2>Tecnologias Utilizadas</h2>
 <ul>
   <li>
     <a href="https://www.python.org/">
