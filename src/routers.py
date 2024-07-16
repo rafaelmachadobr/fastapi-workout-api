@@ -8,4 +8,5 @@ api_router = APIRouter()
 api_router.include_router(athlete, prefix="/athletes", tags=["athletes"])
 api_router.include_router(category, prefix="/categories", tags=["categories"])
 api_router.include_router(
-    training_center, prefix="/training_centers", tags=["training_centers"])
+    training_center, prefix="/training_centers", tags=["training_centers"]
+)

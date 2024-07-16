@@ -10,4 +10,4 @@ RUN pip install -r requirements.txt
 
 EXPOSE 8000
 
-CMD ["make", "run"]
+CMD tail -f /dev/null
